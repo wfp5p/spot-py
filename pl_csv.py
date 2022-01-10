@@ -12,6 +12,9 @@ from pprint import pprint
 import csv
 import yaml
 import os
+import warnings
+
+warnings.simplefilter('always', DeprecationWarning)
 
 
 
