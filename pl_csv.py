@@ -11,9 +11,14 @@ from spotipy.oauth2 import SpotifyOAuth
 from pprint import pprint
 import csv
 import os
+from datetime import timedelta
 
 
-# globals?  Damn Python seems to love them
+# convert milliseconds to MM:SS
+def fm_ms(ms):
+    mins, seconds = divmod(round(ms / 1000), 60)
+    return '{:02}:{:02}'.format(int(mins), int(seconds))
+
 def write_csv(fp, items):
 
     # format that spot_csv.pl understands
@@ -31,7 +36,7 @@ def write_csv(fp, items):
         track_info =[ track['artists'][0]['name'],
                       track['name'],
                       album['name'],
-                      track['duration_ms'],
+                      fm_ms(track['duration_ms']),
                     ]
         tracklist.append(track_info)
 
