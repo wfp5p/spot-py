@@ -12,13 +12,9 @@ from pprint import pprint
 import csv
 import os
 
-filepath = "/tmp/spot.csv"
-if os.path.exists(filepath):
-    print("File already exists!")
-    quit()
 
 # globals?  Damn Python seems to love them
-def write_csv():
+def write_csv(fp):
 
     # format that spot_csv.pl understands
     csv_headers = ["performer", "title", "album", "duration_ms"]
@@ -39,17 +35,18 @@ def write_csv():
                     ]
         tracklist.append(track_info)
 
-    with open(filepath, 'w', encoding='utf-8') as file:
+    with open(fp, 'w', encoding='utf-8') as file:
         writer = csv.writer(file, dialect='unix', delimiter='|')
         writer.writerows(tracklist)
 
-scope = "playlist-read-private"
 
+filepath = "/tmp/spot.csv"
+if os.path.exists(filepath):
+    print("File already exists!")
+    quit()
+
+scope = "playlist-read-private"
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
-fields="tracks,next"
 results = sp.user_playlist('joewahoo', '6CoGeD2spqwCj5qneYEAt0')
 tracks = results['tracks']
-write_csv()
-# while tracks['next']:
-#     tracks = sp.next[tracks]
-#     show_tracks()
+write_csv(filepath)
