@@ -14,7 +14,7 @@ import os
 
 
 # globals?  Damn Python seems to love them
-def write_csv(fp):
+def write_csv(fp, items):
 
     # format that spot_csv.pl understands
     csv_headers = ["performer", "title", "album", "duration_ms"]
@@ -22,7 +22,7 @@ def write_csv(fp):
     tracklist.append(csv_headers)
 
 
-    for item in tracks['items']:
+    for item in items: #tracks['items']:
         track = item['track']
 
         # Secondary query for album details
@@ -48,5 +48,4 @@ if os.path.exists(filepath):
 scope = "playlist-read-private"
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 results = sp.user_playlist('joewahoo', '6CoGeD2spqwCj5qneYEAt0')
-tracks = results['tracks']
-write_csv(filepath)
+write_csv(filepath, results['tracks']['items'])
