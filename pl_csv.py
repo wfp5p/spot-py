@@ -10,7 +10,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from pprint import pprint
 import csv
-import yaml # maybe do the crazy stuff to get the C bindings?
+import yaml
 import os
 
 
@@ -21,10 +21,9 @@ def fm_ms(ms):
     return '{:02}:{:02}'.format(int(mins), int(seconds))
 
 
-def create_yaml(items):
+def create_items(tracklist, items):
     """ turn items into tracklist suitable for YAML dump"""
 
-    tracklist = []
     for item in items:
         track = item['track']
 
@@ -41,40 +40,32 @@ def create_yaml(items):
 
     return tracklist
 
-def create_tracklist(items):
+def tl_to_csv(items):
     """ turn items into tracklist suitable for CSV"""
 
     tracklist = []
-    for item in items:
-        track = item['track']
-
-        # Secondary query for album details
-        album=sp.album( track['album']['uri'] )
-
-        track_info =[ track['artists'][0]['name'],
-                      track['name'],
-                      album['name'],
-                      fm_ms(track['duration_ms']),
+    for track in items:
+        track_info =[ track['artist'],
+                      track['title'],
+                      track['album'],
+                      track['duration'],
                     ]
         tracklist.append(track_info)
 
     return tracklist
 
 
-def write_yaml(fp, items):
-
-    tracklist = create_yaml(items)
-
-    with open(fp, 'w', encoding='utf-8') as file:
-        yaml.dump(tracklist,file,explicit_start=True)
+def write_yaml(fp, tl):
+     with open(fp, 'w', encoding='utf-8') as file:
+        yaml.dump(tl,file,explicit_start=True)
 
 
-def write_csv(fp, items):
+def write_csv(fp, tl):
 
     # format that spot_csv.pl understands
     csv_headers = ["performer", "title", "album", "duration"]
 
-    tracklist = create_tracklist(items)
+    tracklist = tl_to_csv(tl)
     tracklist.insert(0, csv_headers)
 
     with open(fp, 'w', encoding='utf-8') as file:
@@ -89,6 +80,18 @@ if os.path.exists(filepath):
 
 scope = "playlist-read-private"
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
-results = sp.user_playlist('joewahoo', '6CoGeD2spqwCj5qneYEAt0')
-write_csv(filepath, results['tracks']['items'])
-#write_yaml(filepath, results['tracks']['items'])
+
+results = sp.playlist_items('6CoGeD2spqwCj5qneYEAt0') # show94
+#results = sp.playlist_items('4JDfhw91zUmmqLemqaVp6F') # future shows
+#results = sp.playlist_items('1CAwKEuuTl2AllTvBOtc2K') # over 100 test
+
+#tracks = results['tracks']
+tracklist = []
+create_items(tracklist,results['items'])
+
+while results['next']:
+    results = sp.next(results)
+    create_items(tracklist,results['items'])
+
+write_csv(filepath, tracklist)
+#write_yaml(filepath, tracklist)
