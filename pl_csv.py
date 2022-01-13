@@ -9,6 +9,7 @@ requires SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET to be in shell env
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from pprint import pprint
+import argparse
 import csv
 import yaml
 import os
@@ -17,6 +18,12 @@ import warnings
 warnings.simplefilter('always', DeprecationWarning)
 
 
+def check_file(fn):
+    if not fn:
+        return
+    if os.path.exists(fn):
+        print('{} already exists'.format(fn))
+        quit()
 
 def fm_ms(ms):
     """ convert milliseconds to MM:SS """
@@ -76,19 +83,28 @@ def write_csv(fp, tl):
         writer.writerows(tracklist)
 
 
-filepath = "/tmp/spot.csv"
-if os.path.exists(filepath):
-    print("File already exists!")
-    quit()
+argp = argparse.ArgumentParser(description='Download Spotify Playlist as CSV or YAML')
+argp.add_argument("--csv", help='name of CSV file to write')
+argp.add_argument("--yaml", help='name of YAML file to write')
+argp.add_argument("-o", "--overwrite", help='overwrite files', action="store_true")
+argp.add_argument("pl_id", help='Spotify id of playlist')
+args = argp.parse_args()
+
+if not args.csv and not args.yaml:
+    print('must provide a csv or yaml file name')
+
+if not args.overwrite:
+    check_file(args.csv)
+    check_file(args.yaml)
 
 scope = "playlist-read-private"
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-results = sp.playlist_items('6CoGeD2spqwCj5qneYEAt0') # show94
+results = sp.playlist_items(args.pl_id)
+#results = sp.playlist_items('6CoGeD2spqwCj5qneYEAt0') # show94
 #results = sp.playlist_items('4JDfhw91zUmmqLemqaVp6F') # future shows
 #results = sp.playlist_items('1CAwKEuuTl2AllTvBOtc2K') # over 100 test
 
-#tracks = results['tracks']
 tracklist = []
 create_items(tracklist,results['items'])
 
@@ -96,5 +112,8 @@ while results['next']:
     results = sp.next(results)
     create_items(tracklist,results['items'])
 
-write_csv(filepath, tracklist)
-#write_yaml(filepath, tracklist)
+if args.csv:
+    write_csv(args.csv, tracklist)
+
+if args.yaml:
+    write_yaml(args.yaml, tracklist)
