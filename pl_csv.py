@@ -70,7 +70,7 @@ def write_yaml(fp, tl):
         yaml.dump(tl,file,explicit_start=True)
 
 
-def write_csv(fp, tl):
+def write_csv(fp, delimiter, tl):
 
     # format that spot_csv.pl understands
     csv_headers = ["performer", "title", "album", "duration"]
@@ -79,19 +79,22 @@ def write_csv(fp, tl):
     tracklist.insert(0, csv_headers)
 
     with open(fp, 'w', encoding='utf-8') as file:
-        writer = csv.writer(file, dialect='unix', delimiter='|')
+        writer = csv.writer(file, dialect='unix', delimiter=delimiter)
         writer.writerows(tracklist)
 
-
 argp = argparse.ArgumentParser(description='Download Spotify Playlist as CSV or YAML')
-argp.add_argument("--csv", help='name of CSV file to write')
-argp.add_argument("--yaml", help='name of YAML file to write')
-argp.add_argument("-o", "--overwrite", help='overwrite files', action="store_true")
-argp.add_argument("pl_id", help='Spotify id of playlist')
+argp_csv = argp.add_argument_group('csv', 'write to a csv file')
+argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
+argp_csv.add_argument('--csv', help='name of CSV file to write')
+argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
+argp_yaml.add_argument('--yaml', help='name of YAML file to write')
+argp.add_argument('-o', '--overwrite', help='overwrite files', action='store_true')
+argp.add_argument('pl_id', help='Spotify id of playlist', metavar='playlist_id')
 args = argp.parse_args()
 
 if not args.csv and not args.yaml:
     print('must provide a csv or yaml file name')
+    quit()
 
 if not args.overwrite:
     check_file(args.csv)
@@ -113,7 +116,7 @@ while results['next']:
     create_items(tracklist,results['items'])
 
 if args.csv:
-    write_csv(args.csv, tracklist)
+    write_csv(args.csv, args.delimiter, tracklist)
 
 if args.yaml:
     write_yaml(args.yaml, tracklist)
