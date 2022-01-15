@@ -25,6 +25,7 @@ def check_file(fn):
         print('{} already exists'.format(fn))
         quit()
 
+
 def fm_ms(ms):
     """ convert milliseconds to MM:SS """
     mins, seconds = divmod(round(ms / 1000), 60)
@@ -38,36 +39,37 @@ def create_items(tracklist, items):
         track = item['track']
 
         # Secondary query for album details
-        album=sp.album( track['album']['uri'] )
+        album = sp.album(track['album']['uri'])
 
-        track_info ={ 'artist' : track['artists'][0]['name'],
-                      'title' : track['name'],
-                      'album' : album['name'],
-                      'duration' : fm_ms(track['duration_ms']),
-                      'fullpath' : 'spotify'
-                    }
+        track_info = {'artist': track['artists'][0]['name'],
+                      'title': track['name'],
+                      'album': album['name'],
+                      'duration': fm_ms(track['duration_ms']),
+                      'fullpath': 'spotify'
+                      }
         tracklist.append(track_info)
 
     return tracklist
+
 
 def tl_to_csv(items):
     """ turn items into tracklist suitable for CSV"""
 
     tracklist = []
     for track in items:
-        track_info =[ track['artist'],
+        track_info = [track['artist'],
                       track['title'],
                       track['album'],
                       track['duration'],
-                    ]
+                      ]
         tracklist.append(track_info)
 
     return tracklist
 
 
 def write_yaml(fp, tl):
-     with open(fp, 'w', encoding='utf-8') as file:
-        yaml.dump(tl,file,explicit_start=True)
+    with open(fp, 'w', encoding='utf-8') as file:
+        yaml.dump(tl, file, explicit_start=True)
 
 
 def write_csv(fp, delimiter, tl):
@@ -81,6 +83,7 @@ def write_csv(fp, delimiter, tl):
     with open(fp, 'w', encoding='utf-8') as file:
         writer = csv.writer(file, dialect='unix', delimiter=delimiter)
         writer.writerows(tracklist)
+
 
 argp = argparse.ArgumentParser(description='Download Spotify Playlist as CSV or YAML')
 argp_csv = argp.add_argument_group('csv', 'write to a csv file')
@@ -104,16 +107,16 @@ scope = "playlist-read-private"
 sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
 results = sp.playlist_items(args.pl_id)
-#results = sp.playlist_items('6CoGeD2spqwCj5qneYEAt0') # show94
-#results = sp.playlist_items('4JDfhw91zUmmqLemqaVp6F') # future shows
-#results = sp.playlist_items('1CAwKEuuTl2AllTvBOtc2K') # over 100 test
+# results = sp.playlist_items('6CoGeD2spqwCj5qneYEAt0') # show94
+# results = sp.playlist_items('4JDfhw91zUmmqLemqaVp6F') # future shows
+# results = sp.playlist_items('1CAwKEuuTl2AllTvBOtc2K') # over 100 test
 
 tracklist = []
-create_items(tracklist,results['items'])
+create_items(tracklist, results['items'])
 
 while results['next']:
     results = sp.next(results)
-    create_items(tracklist,results['items'])
+    create_items(tracklist, results['items'])
 
 if args.csv:
     write_csv(args.csv, args.delimiter, tracklist)
