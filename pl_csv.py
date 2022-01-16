@@ -82,13 +82,13 @@ def write_yaml(fp, tl):
         yaml.dump(tl, file, explicit_start=True)
 
 
-def write_csv(fp, delimiter, tl):
-
-    # format that spot_csv.pl understands
-    csv_headers = ["performer", "title", "album", "duration"]
+def write_csv(fp, delimiter, tl, noheader):
 
     tracklist = tl_to_csv(tl)
-    tracklist.insert(0, csv_headers)
+
+    # format that spot_csv.pl understands
+    if not noheader:
+        tracklist.insert(0, ["performer", "title", "album", "duration"])
 
     with open(fp, 'w', encoding='utf-8') as file:
         writer = csv.writer(file, dialect='unix', delimiter=delimiter)
@@ -101,6 +101,7 @@ def main():
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
+    argp_csv.add_argument('--noheader', help='do not write header line', action='store_true')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
     argp.add_argument('-o', '--overwrite', help='overwrite files', action='store_true')
     argp.add_argument('pl_id', help='Spotify id of playlist', metavar='playlist_id')
@@ -124,7 +125,7 @@ def main():
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
-        write_csv(args.csv, args.delimiter, tracklist)
+        write_csv(args.csv, args.delimiter, tracklist, args.noheader)
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
