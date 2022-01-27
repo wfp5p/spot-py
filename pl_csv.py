@@ -50,7 +50,10 @@ def create_items(sp, playlist_id):
                           'title': track['name'],
                           'album': album['name'],
                           'duration': fm_ms(track['duration_ms']),
-                          'fullpath': 'spotify'
+                          'fullpath': 'spotify',
+                          'label': album['label'],
+                          'released': album['release_date'],
+                          'release_date_precision': album['release_date_precision']
                           }
             tracklist.append(track_info)
 
