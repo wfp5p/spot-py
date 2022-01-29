@@ -66,37 +66,24 @@ def create_items(sp, playlist_id):
     return tracklist
 
 
-def tl_to_csv(items):
-    """ turn items into tracklist suitable for CSV"""
-
-    tracklist = []
-    for track in items:
-        track_info = [track['artist'],
-                      track['title'],
-                      track['album'],
-                      track['duration'],
-                      ]
-        tracklist.append(track_info)
-
-    return tracklist
-
-
 def write_yaml(fp, tl):
     with open(fp, 'w', encoding='utf-8') as file:
         yaml.dump(tl, file, explicit_start=True)
 
 
-def write_csv(fp, delimiter, tl, noheader):
-
-    tracklist = tl_to_csv(tl)
-
-    # format that spot_csv.pl understands
-    if not noheader:
-        tracklist.insert(0, ["performer", "title", "album", "duration"])
+def write_csv(fp, delimiter, tl, noheader, fnum):
+    formats = [['performer', 'title', 'album', 'duration'],
+               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes']]
 
     with open(fp, 'w', encoding='utf-8') as file:
-        writer = csv.writer(file, dialect='unix', delimiter=delimiter)
-        writer.writerows(tracklist)
+        writer = csv.DictWriter(file, dialect='unix', extrasaction='ignore',
+                                fieldnames=formats[int(fnum)-1])
+
+        if not noheader:
+            writer.writeheader()
+
+        for row in tl:
+            writer.writerow(row)
 
 
 def main():
@@ -105,7 +92,10 @@ def main():
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
-    argp_csv.add_argument('--noheader', help='do not write header line', action='store_true')
+    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 3),
+                          default=1)
+    argp_csv.add_argument(
+        '--noheader', help='do not write header line', action='store_true')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
     argp.add_argument('-o', '--overwrite', help='overwrite files', action='store_true')
     argp.add_argument('pl_id', help='Spotify id of playlist', metavar='playlist_id')
@@ -129,7 +119,7 @@ def main():
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
-        write_csv(args.csv, args.delimiter, tracklist, args.noheader)
+        write_csv(args.csv, args.delimiter, tracklist, args.noheader, args.format)
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
