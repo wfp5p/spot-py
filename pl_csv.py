@@ -47,6 +47,7 @@ def create_items(sp, playlist_id):
             album = sp.album(track['album']['uri'])
 
             track_info = {'artist': track['artists'][0]['name'],
+                          'performer': track['artists'][0]['name'],
                           'title': track['name'],
                           'album': album['name'],
                           'duration': fm_ms(track['duration_ms']),
