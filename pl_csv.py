@@ -30,7 +30,7 @@ def check_file(fn):
 def fm_ms(ms):
     """ convert milliseconds to MM:SS """
     mins, seconds = divmod(round(ms / 1000), 60)
-    return '{:02}:{:02}'.format(int(mins), int(seconds))
+    return '{}:{:02}'.format(int(mins), int(seconds))
 
 
 def create_items(sp, playlist_id):
