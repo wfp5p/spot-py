@@ -72,6 +72,9 @@ def write_yaml(fp, tl):
         yaml.dump(tl, file, explicit_start=True)
 
 
+# add (NEW) logic!
+# format 1 is old style to feed into noburn pass 1
+# format 2 mimics what noburn pass 1 would emit
 def write_csv(fp, delimiter, tl, noheader, fnum):
     formats = [['performer', 'title', 'album', 'duration'],
                ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes']]
