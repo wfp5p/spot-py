@@ -13,10 +13,12 @@ import sys
 import warnings
 import yaml
 import spotipy
+import logging
 from spotipy.oauth2 import SpotifyOAuth
 
-
 warnings.simplefilter('always', DeprecationWarning)
+
+logger = logging.getLogger('pl_csv')
 
 
 def check_file(fn):
