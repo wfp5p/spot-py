@@ -55,7 +55,8 @@ def create_items(sp, playlist_id):
                           'label': album['label'],
                           'released': album['release_date'][:4],
                           'release_date': album['release_date'],
-                          'release_date_precision': album['release_date_precision']
+                          'release_date_precision': album['release_date_precision'],
+                          'spot_id': track['id']
                           }
             tracklist.append(track_info)
 
@@ -75,9 +76,12 @@ def write_yaml(fp, tl):
 # add (NEW) logic!
 # format 1 is old style to feed into noburn pass 1
 # format 2 mimics what noburn pass 1 would emit
+# format 3 is like format 2 but has spotify track id number
+
 def write_csv(fp, delimiter, tl, noheader, fnum):
     formats = [['performer', 'title', 'album', 'duration'],
-               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes']]
+               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes'],
+               ['title', 'duration', 'performer', 'album', 'spot_id']]
 
     with open(fp, 'w', encoding='utf-8') as file:
         writer = csv.DictWriter(file, dialect='unix', extrasaction='ignore',
@@ -96,7 +100,7 @@ def main():
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
-    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 3),
+    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 4),
                           default=1)
     argp_csv.add_argument(
         '--noheader', help='do not write header line', action='store_true')
