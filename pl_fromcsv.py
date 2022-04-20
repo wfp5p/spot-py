@@ -48,7 +48,8 @@ def main():
             raise Exception('csv file does not have spot_id field')
 
         for row in reader:
-            tracks.append(row['spot_id'])
+            if row['spot_id']:
+                tracks.append(row['spot_id'])
 
     scope = "playlist-modify-public"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
