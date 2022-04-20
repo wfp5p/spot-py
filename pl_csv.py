@@ -79,11 +79,13 @@ def write_yaml(fp, tl):
 # format 1 is old style to feed into noburn pass 1
 # format 2 mimics what noburn pass 1 would emit
 # format 3 is like format 2 but has spotify track id number
+# format 4 is 2 plus spot_id
 
 def write_csv(fp, delimiter, tl, noheader, fnum):
     formats = [['performer', 'title', 'album', 'duration'],
                ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes'],
-               ['title', 'duration', 'performer', 'album', 'spot_id']]
+               ['title', 'duration', 'performer', 'album', 'spot_id'],
+               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id']]
 
     with open(fp, 'w', encoding='utf-8') as outfile:
         writer = csv.DictWriter(outfile, dialect='unix', extrasaction='ignore',
@@ -102,8 +104,8 @@ def main():
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
-    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 4),
-                          default=1)
+    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 5),
+                          default=2)
     argp_csv.add_argument(
         '--noheader', help='do not write header line', action='store_true')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
