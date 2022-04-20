@@ -71,8 +71,8 @@ def create_items(sp, playlist_id):
 
 
 def write_yaml(fp, tl):
-    with open(fp, 'w', encoding='utf-8') as file:
-        yaml.dump(tl, file, explicit_start=True)
+    with open(fp, 'w', encoding='utf-8') as outfile:
+        yaml.dump(tl, outfile, explicit_start=True)
 
 
 # add (NEW) logic!
@@ -85,8 +85,8 @@ def write_csv(fp, delimiter, tl, noheader, fnum):
                ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes'],
                ['title', 'duration', 'performer', 'album', 'spot_id']]
 
-    with open(fp, 'w', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, dialect='unix', extrasaction='ignore',
+    with open(fp, 'w', encoding='utf-8') as outfile:
+        writer = csv.DictWriter(outfile, dialect='unix', extrasaction='ignore',
                                 fieldnames=formats[int(fnum)-1])
 
         if not noheader:
