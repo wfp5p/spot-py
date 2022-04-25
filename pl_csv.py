@@ -4,6 +4,19 @@
 Export playlist as CSV
 
 requires SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET to be in shell env
+
+artist => performer
+title => title
+duration => duration
+album => album
+released => released (but spot data needs a massage)
+label => label
+
+format #1 is 'performer','title','album','duration'
+format #2 is 'title','duration','performer','album','released','label','composer','notes'
+format #3 is 'title', 'duration', 'performer', 'album', 'spot_id'
+format #4 is 'title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id'
+
 """
 
 import argparse
