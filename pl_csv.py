@@ -94,11 +94,13 @@ def write_yaml(fp, tl):
 # format 3 is like format 2 but has spotify track id number
 # format 4 is 2 plus spot_id
 
-def write_csv(fp, delimiter, tl, noheader, fnum):
+def write_csv(fp, delimiter, tl, noheader, fnum, brk):
     formats = [['performer', 'title', 'album', 'duration'],
                ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes'],
                ['title', 'duration', 'performer', 'album', 'spot_id'],
                ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id']]
+
+    brk_row = {'duration': '!'}
 
     with open(fp, 'w', encoding='utf-8') as outfile:
         writer = csv.DictWriter(outfile, dialect='unix', extrasaction='ignore',
@@ -107,8 +109,10 @@ def write_csv(fp, delimiter, tl, noheader, fnum):
         if not noheader:
             writer.writeheader()
 
-        for row in tl:
+        for idx, row in enumerate(tl, start=1):
             writer.writerow(row)
+            if idx in brk:
+                writer.writerow(brk_row)
 
 
 def main():
@@ -121,6 +125,8 @@ def main():
                           default=2)
     argp_csv.add_argument(
         '--noheader', help='do not write header line', action='store_true')
+    argp_csv.add_argument(
+        '--breaks', help='file listing line numbers to break after')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
     argp.add_argument('-o', '--overwrite', help='overwrite files', action='store_true')
     argp.add_argument('pl_id', help='Spotify id of playlist', metavar='playlist_id')
@@ -129,6 +135,14 @@ def main():
     if not args.csv and not args.yaml:
         print('must provide a csv or yaml file name')
         return
+
+    brk = []
+    if args.csv and args.breaks:
+        if not os.path.exists(args.breaks):
+            raise argparse.ArgumentTypeError("breakfile %s doesn't exist" % args.breaks)
+        with open(args.breaks, 'r') as f:
+            for i in f:
+                brk.append(int(i))
 
     if not args.overwrite:
         check_file(args.csv)
@@ -144,7 +158,7 @@ def main():
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
-        write_csv(args.csv, args.delimiter, tracklist, args.noheader, args.format)
+        write_csv(args.csv, args.delimiter, tracklist, args.noheader, args.format, brk)
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
