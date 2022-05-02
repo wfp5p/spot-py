@@ -142,8 +142,10 @@ def main():
             raise argparse.ArgumentTypeError("breakfile %s doesn't exist" % args.breaks)
         with open(args.breaks, 'r') as f:
             for i in f:
-                brk.append(int(i))
-
+                try:
+                    brk.append(int(i))
+                except ValueError:
+                    next
     if not args.overwrite:
         check_file(args.csv)
         check_file(args.yaml)
