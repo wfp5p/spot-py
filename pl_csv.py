@@ -1,5 +1,4 @@
 #! /usr/bin/python3
-
 """
 Export playlist as CSV
 
@@ -61,18 +60,19 @@ def create_items(sp, playlist_id):
             # Secondary query for album details
             album = sp.album(track['album']['uri'])
 
-            track_info = {'artist': track['artists'][0]['name'],
-                          'performer': track['artists'][0]['name'],
-                          'title': track['name'],
-                          'album': album['name'],
-                          'duration': fm_ms(track['duration_ms']),
-                          'fullpath': 'spotify',
-                          'label': album['label'],
-                          'released': album['release_date'][:4],
-                          'release_date': album['release_date'],
-                          'release_date_precision': album['release_date_precision'],
-                          'spot_id': track['id']
-                          }
+            track_info = {
+                'artist': track['artists'][0]['name'],
+                'performer': track['artists'][0]['name'],
+                'title': track['name'],
+                'album': album['name'],
+                'duration': fm_ms(track['duration_ms']),
+                'fullpath': 'spotify',
+                'label': album['label'],
+                'released': album['release_date'][:4],
+                'release_date': album['release_date'],
+                'release_date_precision': album['release_date_precision'],
+                'spot_id': track['id']
+            }
             tracklist.append(track_info)
 
         if results['next']:
@@ -94,17 +94,25 @@ def write_yaml(fp, tl):
 # format 3 is like format 2 but has spotify track id number
 # format 4 is 2 plus spot_id
 
+
 def write_csv(fp, delimiter, tl, noheader, fnum, brk):
     formats = [['performer', 'title', 'album', 'duration'],
-               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes'],
-               ['title', 'duration', 'performer', 'album', 'spot_id'],
-               ['title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id']]
+               [
+                   'title', 'duration', 'performer', 'album', 'released',
+                   'label', 'composer', 'notes'
+               ], ['title', 'duration', 'performer', 'album', 'spot_id'],
+               [
+                   'title', 'duration', 'performer', 'album', 'released',
+                   'label', 'composer', 'notes', 'spot_id'
+               ]]
 
     brk_row = {'duration': '!'}
 
     with open(fp, 'w', encoding='utf-8') as outfile:
-        writer = csv.DictWriter(outfile, dialect='unix', extrasaction='ignore',
-                                fieldnames=formats[int(fnum)-1])
+        writer = csv.DictWriter(outfile,
+                                dialect='unix',
+                                extrasaction='ignore',
+                                fieldnames=formats[int(fnum) - 1])
 
         if not noheader:
             writer.writeheader()
@@ -116,20 +124,30 @@ def write_csv(fp, delimiter, tl, noheader, fnum, brk):
 
 
 def main():
-    argp = argparse.ArgumentParser(description='Download Spotify Playlist as CSV or YAML')
+    argp = argparse.ArgumentParser(
+        description='Download Spotify Playlist as CSV or YAML')
     argp_csv = argp.add_argument_group('csv', 'write to a csv file')
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
-    argp_csv.add_argument('--format', help='output format', type=int, choices=range(1, 5),
+    argp_csv.add_argument('--format',
+                          help='output format',
+                          type=int,
+                          choices=range(1, 5),
                           default=2)
-    argp_csv.add_argument(
-        '--noheader', help='do not write header line', action='store_true')
-    argp_csv.add_argument(
-        '--breaks', help='file listing line numbers to break after')
+    argp_csv.add_argument('--noheader',
+                          help='do not write header line',
+                          action='store_true')
+    argp_csv.add_argument('--breaks',
+                          help='file listing line numbers to break after')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
-    argp.add_argument('-o', '--overwrite', help='overwrite files', action='store_true')
-    argp.add_argument('pl_id', help='Spotify id of playlist', metavar='playlist_id')
+    argp.add_argument('-o',
+                      '--overwrite',
+                      help='overwrite files',
+                      action='store_true')
+    argp.add_argument('pl_id',
+                      help='Spotify id of playlist',
+                      metavar='playlist_id')
     args = argp.parse_args()
 
     if not args.csv and not args.yaml:
@@ -139,7 +157,8 @@ def main():
     brk = []
     if args.csv and args.breaks:
         if not os.path.exists(args.breaks):
-            raise argparse.ArgumentTypeError("breakfile %s doesn't exist" % args.breaks)
+            raise argparse.ArgumentTypeError("breakfile %s doesn't exist" %
+                                             args.breaks)
         with open(args.breaks, 'r') as f:
             for i in f:
                 try:
@@ -160,7 +179,8 @@ def main():
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
-        write_csv(args.csv, args.delimiter, tracklist, args.noheader, args.format, brk)
+        write_csv(args.csv, args.delimiter, tracklist, args.noheader,
+                  args.format, brk)
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
