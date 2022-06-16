@@ -95,7 +95,11 @@ def write_yaml(fp, tl):
 # format 4 is 2 plus spot_id
 
 
-def write_csv(fp, delimiter, tl, noheader, fnum, brk):
+def write_csv(args, tl, brk):
+    fp = args.csv;
+    noheader = args.noheader
+    fnum = args.format_number
+
     formats = [['performer', 'title', 'album', 'duration'],
                [
                    'title', 'duration', 'performer', 'album', 'released',
@@ -118,6 +122,8 @@ def write_csv(fp, delimiter, tl, noheader, fnum, brk):
             writer.writeheader()
 
         for idx, row in enumerate(tl, start=1):
+            if args.nolabel:
+                row['label'] = ''
             writer.writerow(row)
             if idx in brk:
                 writer.writerow(brk_row)
@@ -129,12 +135,16 @@ def main():
     argp_csv = argp.add_argument_group('csv', 'write to a csv file')
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
-    argp_csv.add_argument('--delimiter', help='field delimiter', default=',')
     argp_csv.add_argument('--format',
                           help='output format',
                           type=int,
                           choices=range(1, 5),
-                          default=2)
+                          default=2,
+                          dest='format_number'
+                         )
+    argp_csv.add_argument('--nolabel',
+                          help='do not add record labels',
+                          action='store_true')
     argp_csv.add_argument('--noheader',
                           help='do not write header line',
                           action='store_true')
@@ -179,8 +189,7 @@ def main():
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
-        write_csv(args.csv, args.delimiter, tracklist, args.noheader,
-                  args.format, brk)
+        write_csv(args, tracklist, brk)
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
