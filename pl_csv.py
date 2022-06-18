@@ -182,10 +182,6 @@ def main():
     scope = "playlist-read-private"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    # 6CoGeD2spqwCj5qneYEAt0 show94
-    # 4JDfhw91zUmmqLemqaVp6F future shows
-    # 1CAwKEuuTl2AllTvBOtc2K over 100 test
-
     tracklist = create_items(sp, args.pl_id)
 
     if args.csv:
