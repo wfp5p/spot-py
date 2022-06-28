@@ -16,6 +16,11 @@ format #2 is 'title','duration','performer','album','released','label','composer
 format #3 is 'title', 'duration', 'performer', 'album', 'spot_id'
 format #4 is 'title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id'
 
+format 1 is old style to feed into noburn pass 1
+format 2 mimics what noburn pass 1 would emit
+format 3 is format 1 but has spotify track id number
+format 4 is format 2 plus spot_id
+
 """
 
 import argparse
@@ -89,10 +94,6 @@ def write_yaml(fp, tl):
 
 
 # add (NEW) logic!
-# format 1 is old style to feed into noburn pass 1
-# format 2 mimics what noburn pass 1 would emit
-# format 3 is like format 2 but has spotify track id number
-# format 4 is 2 plus spot_id
 
 
 def write_csv(args, tl, brk):
@@ -139,7 +140,7 @@ def main():
                           help='output format',
                           type=int,
                           choices=range(1, 5),
-                          default=2,
+                          default=4,
                           dest='format_number'
                          )
     argp_csv.add_argument('--nolabel',
