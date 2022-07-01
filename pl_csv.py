@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 """
 Export playlist as CSV
 
@@ -183,8 +183,7 @@ def main():
         return
 
     scope = "playlist-read-private"
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
-                                                   open_browser=False))
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
     tracklist = create_items(sp, args.pl_id)
 
