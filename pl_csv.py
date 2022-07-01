@@ -26,7 +26,6 @@ format 4 is format 2 plus spot_id
 import argparse
 import csv
 import os
-import sys
 import warnings
 import yaml
 import spotipy
@@ -38,12 +37,15 @@ warnings.simplefilter('always', DeprecationWarning)
 logger = logging.getLogger('pl_csv')
 
 
-def check_file(fn):
+def check_file(fn, overwrite):
     if not fn:
-        return
+        return False
     if os.path.exists(fn):
+        if overwrite and os.path.isfile(fn):
+            return True
         print(f'{fn} already exists')
-        sys.exit()
+        return False
+    return True
 
 
 def fm_ms(ms):
@@ -141,8 +143,7 @@ def main():
                           type=int,
                           choices=range(1, 5),
                           default=4,
-                          dest='format_number'
-                         )
+                          dest='format_number')
     argp_csv.add_argument('--nolabel',
                           help='do not add record labels',
                           action='store_true')
@@ -176,15 +177,17 @@ def main():
                 except ValueError:
                     pass
 
-    if not args.overwrite:
-        check_file(args.csv)
-        check_file(args.yaml)
+    if not check_file(args.csv, args.overwrite) and not check_file(
+            args.yaml, args.overwrite):
+        print('must provide a csv or yaml file name')
+        return
 
     scope = "playlist-read-private"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
                                                    open_browser=False))
 
     tracklist = create_items(sp, args.pl_id)
+
 
     if args.csv:
         write_csv(args, tracklist, brk)
