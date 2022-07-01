@@ -42,14 +42,14 @@ def check_file(fn):
     if not fn:
         return
     if os.path.exists(fn):
-        print('{} already exists'.format(fn))
+        print(f'{fn} already exists')
         sys.exit()
 
 
 def fm_ms(ms):
     """ convert milliseconds to MM:SS """
     mins, seconds = divmod(round(ms / 1000), 60)
-    return '{}:{:02}'.format(int(mins), int(seconds))
+    return f'{int(mins)}:{int(seconds):02d}'
 
 
 def create_items(sp, playlist_id):
@@ -168,8 +168,7 @@ def main():
     brk = []
     if args.csv and args.breaks:
         if not os.path.exists(args.breaks):
-            raise argparse.ArgumentTypeError("breakfile %s doesn't exist" %
-                                             args.breaks)
+            raise argparse.ArgumentTypeError(f"breakfile {str(args.breaks)} doesn't exist")
         with open(args.breaks, 'r', encoding='utf-8') as f:
             for i in f:
                 try:
