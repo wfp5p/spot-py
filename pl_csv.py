@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/bin/python
 """
 Export playlist as CSV
 
@@ -25,6 +25,7 @@ format 4 is format 2 plus spot_id
 
 import argparse
 import csv
+import json
 import os
 import warnings
 import yaml
@@ -94,6 +95,9 @@ def write_yaml(fp, tl):
     with open(fp, 'w', encoding='utf-8') as outfile:
         yaml.dump(tl, outfile, explicit_start=True)
 
+def write_json(fp, tl):
+    with open(fp, 'w', encoding='utf-8') as outfile:
+        json.dump(tl, outfile, indent=1, ensure_ascii=False)
 
 # add (NEW) logic!
 
@@ -137,6 +141,7 @@ def main():
         description='Download Spotify Playlist as CSV or YAML')
     argp_csv = argp.add_argument_group('csv', 'write to a csv file')
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
+    argp_json = argp.add_argument_group('json', 'write to a json file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
     argp_csv.add_argument('--format',
                           help='output format',
@@ -153,6 +158,7 @@ def main():
     argp_csv.add_argument('--breaks',
                           help='file listing line numbers to break after')
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
+    argp_json.add_argument('--json', help='name of JSON file to write')
     argp.add_argument('-o',
                       '--overwrite',
                       help='overwrite files',
@@ -161,10 +167,6 @@ def main():
                       help='Spotify id of playlist',
                       metavar='playlist_id')
     args = argp.parse_args()
-
-    if not args.csv and not args.yaml:
-        print('must provide a csv or yaml file name')
-        return
 
     brk = []
     if args.csv and args.breaks:
@@ -178,8 +180,9 @@ def main():
                     pass
 
     if not check_file(args.csv, args.overwrite) and not check_file(
-            args.yaml, args.overwrite):
-        print('must provide a csv or yaml file name')
+            args.yaml, args.overwrite) and not check_file(
+                args.json, args.overwrite):
+        print('must provide a csv, yaml, or json file name')
         return
 
     scope = "playlist-read-private"
@@ -193,6 +196,9 @@ def main():
 
     if args.yaml:
         write_yaml(args.yaml, tracklist)
+
+    if args.json:
+        write_json(args.json, tracklist)
 
 
 if __name__ == '__main__':
