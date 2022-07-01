@@ -97,7 +97,7 @@ def write_yaml(fp, tl):
 
 
 def write_csv(args, tl, brk):
-    fp = args.csv;
+    fp = args.csv
     noheader = args.noheader
     fnum = args.format_number
 
@@ -170,12 +170,13 @@ def main():
         if not os.path.exists(args.breaks):
             raise argparse.ArgumentTypeError("breakfile %s doesn't exist" %
                                              args.breaks)
-        with open(args.breaks, 'r') as f:
+        with open(args.breaks, 'r', encoding='utf-8') as f:
             for i in f:
                 try:
                     brk.append(int(i))
                 except ValueError:
-                    next
+                    pass
+
     if not args.overwrite:
         check_file(args.csv)
         check_file(args.yaml)
