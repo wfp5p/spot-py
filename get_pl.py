@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 
 '''
 Example how to get list of playlists
@@ -11,8 +11,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 scope = "playlist-read-private"
 
-sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope,
-                                               open_browser=False))
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
 
 playlists = sp.user_playlists('joewahoo')
