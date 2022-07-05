@@ -79,7 +79,8 @@ def create_items(sp, playlist_id):
                 'released': album['release_date'][:4],
                 'release_date': album['release_date'],
                 'release_date_precision': album['release_date_precision'],
-                'spot_id': track['id']
+                'spot_id': track['id'],
+                'added_at': item['added_at']
             }
             tracklist.append(track_info)
 
@@ -111,10 +112,11 @@ def write_csv(args, tl, brk):
                [
                    'title', 'duration', 'performer', 'album', 'released',
                    'label', 'composer', 'notes'
-               ], ['title', 'duration', 'performer', 'album', 'spot_id'],
+               ],
+               ['title', 'duration', 'performer', 'album', 'spot_id'],
                [
                    'title', 'duration', 'performer', 'album', 'released',
-                   'label', 'composer', 'notes', 'spot_id'
+                   'label', 'composer', 'notes', 'spot_id', 'added_at'
                ]]
 
     brk_row = {'duration': '!'}
