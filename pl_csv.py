@@ -65,23 +65,25 @@ def create_items(sp, playlist_id):
         for item in items:
             track = item['track']
 
-            # Secondary query for album details
-            album = sp.album(track['album']['uri'])
-
             track_info = {
                 'artist': track['artists'][0]['name'],
                 'performer': track['artists'][0]['name'],
                 'title': track['name'],
-                'album': album['name'],
+                'album': track['album']['name'],
                 'duration': fm_ms(track['duration_ms']),
                 'fullpath': 'spotify',
-                'label': album['label'],
-                'released': album['release_date'][:4],
-                'release_date': album['release_date'],
-                'release_date_precision': album['release_date_precision'],
                 'spot_id': track['id'],
                 'added_at': item['added_at']
             }
+
+            # Secondary query for album details
+            if track['album']['uri'] is not None:
+                album = sp.album(track['album']['uri'])
+                track_info['label'] = album['label']
+                track_info['released'] = album['release_date'][:4]
+                track_info['release_date'] = album['release_date']
+                track_info['release_date_precision'] = album['release_date_precision']
+
             tracklist.append(track_info)
 
         if results['next']:
