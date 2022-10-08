@@ -55,41 +55,44 @@ def fm_ms(ms):
     return f'{int(mins)}:{int(seconds):02d}'
 
 
+def pl_iter(sp, playlist_id):
+    """iterator for playlist_items"""
+
+    pl = sp.playlist_items(playlist_id)
+    yield from pl['items']
+    while pl['next']:
+        pl = sp.next(pl)
+        yield from pl['items']
+
+
 def create_items(sp, playlist_id):
     """ turn items into tracklist suitable for YAML dump"""
 
-    results = sp.playlist_items(playlist_id)
     tracklist = []
-    while True:
-        items = results['items']
-        for item in items:
-            track = item['track']
+    items = pl_iter(sp, playlist_id)
+    for item in items:
+        track = item['track']
 
-            track_info = {
-                'artist': track['artists'][0]['name'],
-                'performer': track['artists'][0]['name'],
-                'title': track['name'],
-                'album': track['album']['name'],
-                'duration': fm_ms(track['duration_ms']),
-                'fullpath': 'spotify',
-                'spot_id': track['id'],
-                'added_at': item['added_at']
-            }
+        track_info = {
+            'artist': track['artists'][0]['name'],
+            'performer': track['artists'][0]['name'],
+            'title': track['name'],
+            'album': track['album']['name'],
+            'duration': fm_ms(track['duration_ms']),
+            'fullpath': 'spotify',
+            'spot_id': track['id'],
+            'added_at': item['added_at']
+        }
 
-            # Secondary query for album details
-            if track['album']['uri'] is not None:
-                album = sp.album(track['album']['uri'])
-                track_info['label'] = album['label']
-                track_info['released'] = album['release_date'][:4]
-                track_info['release_date'] = album['release_date']
-                track_info['release_date_precision'] = album['release_date_precision']
+        # Secondary query for album details
+        if track['album']['uri'] is not None:
+            album = sp.album(track['album']['uri'])
+            track_info['label'] = album['label']
+            track_info['released'] = album['release_date'][:4]
+            track_info['release_date'] = album['release_date']
+            track_info['release_date_precision'] = album['release_date_precision']
 
-            tracklist.append(track_info)
-
-        if results['next']:
-            results = sp.next(results)
-        else:
-            break
+        tracklist.append(track_info)
 
     return tracklist
 
