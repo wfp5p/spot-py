@@ -32,6 +32,8 @@ import yaml
 import spotipy
 import logging
 from spotipy.oauth2 import SpotifyOAuth
+from spotipy.exceptions import SpotifyException
+from pprint import pprint
 
 warnings.simplefilter('always', DeprecationWarning)
 
@@ -55,21 +57,22 @@ def fm_ms(ms):
     return f'{int(mins)}:{int(seconds):02d}'
 
 
-def pl_iter(sp, playlist_id):
+def pl_iter(sp, playlist):
     """iterator for playlist_items"""
 
-    pl = sp.playlist_items(playlist_id)
+    pl = playlist['tracks']
+
     yield from pl['items']
     while pl['next']:
         pl = sp.next(pl)
         yield from pl['items']
 
 
-def create_items(sp, playlist_id):
+def create_items(sp, playlist):
     """ turn items into tracklist suitable for YAML dump"""
 
     tracklist = []
-    items = pl_iter(sp, playlist_id)
+    items = pl_iter(sp, playlist)
     for item in items:
         track = item['track']
 
@@ -195,7 +198,13 @@ def main():
     scope = "playlist-read-private"
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
-    tracklist = create_items(sp, args.pl_id)
+    try:
+        pl = sp.playlist(args.pl_id)
+    except SpotifyException:
+        print('playlist not found')
+        return
+
+    tracklist = create_items(sp, pl)
 
 
     if args.csv:
