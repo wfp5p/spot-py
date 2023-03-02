@@ -31,9 +31,8 @@ import warnings
 import yaml
 import spotipy
 import logging
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyClientCredentials
 from spotipy.exceptions import SpotifyException
-from pprint import pprint
 
 warnings.simplefilter('always', DeprecationWarning)
 
@@ -195,8 +194,9 @@ def main():
         print('must provide a csv, yaml, or json file name')
         return
 
-    scope = "playlist-read-private"
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+
+    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
+
 
     try:
         pl = sp.playlist(args.pl_id)
