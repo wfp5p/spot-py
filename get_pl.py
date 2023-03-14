@@ -8,7 +8,7 @@ requires SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET to be in shell env
 
 import argparse
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyOAuth
 
 
 def main():
@@ -18,7 +18,9 @@ def main():
                       help='Spotify id')
     args = argp.parse_args()
 
-    sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials())
+    scope = "playlist-read-private"
+
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
     try:
         playlists = sp.user_playlists(args.user)
