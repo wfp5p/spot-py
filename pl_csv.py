@@ -91,12 +91,13 @@ def create_items(sp, playlist):
         if track['album']['uri'] is not None:
             try:
                 album = sp.album(track['album']['uri'])
+            except SpotifyException:
+                pass
+            else:
                 track_info['label'] = album['label']
                 track_info['released'] = album['release_date'][:4]
                 track_info['release_date'] = album['release_date']
                 track_info['release_date_precision'] = album['release_date_precision']
-            except SpotifyException:
-                pass
 
         tracklist.append(track_info)
 
