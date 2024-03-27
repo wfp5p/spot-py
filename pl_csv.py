@@ -51,7 +51,7 @@ def check_file(fn, overwrite):
 
 
 def fm_ms(ms):
-    """ convert milliseconds to MM:SS """
+    """convert milliseconds to MM:SS"""
     mins, seconds = divmod(round(ms / 1000), 60)
     return f'{int(mins)}:{int(seconds):02d}'
 
@@ -68,7 +68,7 @@ def pl_iter(sp, playlist):
 
 
 def create_items(sp, playlist):
-    """ turn items into tracklist suitable for YAML dump"""
+    """turn items into tracklist suitable for YAML dump"""
 
     tracklist = []
     items = pl_iter(sp, playlist)
@@ -119,16 +119,32 @@ def write_csv(args, tl, brk):
     noheader = args.noheader
     fnum = args.format_number
 
-    formats = [['performer', 'title', 'album', 'duration'],
-               [
-                   'title', 'duration', 'performer', 'album', 'released',
-                   'label', 'composer', 'notes'
-               ],
-               ['title', 'duration', 'performer', 'album', 'spot_id'],
-               [
-                   'title', 'duration', 'performer', 'album', 'released',
-                   'label', 'composer', 'notes', 'spot_id', 'added_at'
-               ]]
+    formats = [
+        ['performer', 'title', 'album', 'duration'],
+        [
+            'title',
+            'duration',
+            'performer',
+            'album',
+            'released',
+            'label',
+            'composer',
+            'notes',
+        ],
+        ['title', 'duration', 'performer', 'album', 'spot_id'],
+        [
+            'title',
+            'duration',
+            'performer',
+            'album',
+            'released',
+            'label',
+            'composer',
+            'notes',
+            'spot_id',
+            'added_at',
+        ],
+    ]
 
     brk_row = {'duration': '!'}
 
@@ -192,13 +208,15 @@ def main():
                 except ValueError:
                     pass
 
-    if not check_file(args.csv, args.overwrite) and not check_file(
-            args.yaml, args.overwrite) and not check_file(
-                args.json, args.overwrite):
+    if (
+        not check_file(args.csv, args.overwrite)
+        and not check_file(args.yaml, args.overwrite)
+        and not check_file(args.json, args.overwrite)
+    ):
         print('must provide a csv, yaml, or json file name')
         return
 
-    scope = "playlist-read-private"
+    scope = 'playlist-read-private'
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
     try:
@@ -208,7 +226,6 @@ def main():
         return
 
     tracklist = create_items(sp, pl)
-
 
     if args.csv:
         write_csv(args, tracklist, brk)
