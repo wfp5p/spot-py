@@ -33,7 +33,6 @@ import spotipy
 import logging
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
-from pprint import pprint
 
 warnings.simplefilter('always', DeprecationWarning)
 
