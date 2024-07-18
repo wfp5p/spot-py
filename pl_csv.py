@@ -26,22 +26,14 @@ format 4 is format 2 plus spot_id
 import argparse
 import csv
 import json
-import os
 import yaml
 import spotipy
+
+from pathlib import Path
+from pylibwfp import file_arg_exist, check_file_for_overwrite
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
 
-
-def check_file(fn, overwrite):
-    if not fn:
-        return False
-    if os.path.exists(fn):
-        if overwrite and os.path.isfile(fn):
-            return True
-        print(f'{fn} already exists')
-        return False
-    return True
 
 
 def fm_ms(ms):
@@ -59,6 +51,26 @@ def pl_iter(sp, playlist):
     while pl['next']:
         pl = sp.next(pl)
         yield from pl['items']
+
+
+def readBreaks(breakfile):
+    """read file of line numbers to break at, return list of lines to break at"""
+    brks = []
+    if not breakfile:
+        return brks
+
+    p = Path(breakfile)
+    with p.open('r', encoding='utf-8') as f:
+        with open(args.breaks, 'r', encoding='utf-8') as f:
+            for i in f:
+                try:
+                    brks.append(int(i))
+                except ValueError:
+                    pass
+
+    return brks
+
+
 
 
 def create_items(sp, playlist):
@@ -179,7 +191,8 @@ def main():
                           help='do not write header line',
                           action='store_true')
     argp_csv.add_argument('--breaks',
-                          help='file listing line numbers to break after')
+                          help='file listing line numbers to break after',
+                          type=file_arg_exist())
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
     argp_json.add_argument('--json', help='name of JSON file to write')
     argp.add_argument('-o',
@@ -191,24 +204,6 @@ def main():
                       metavar='playlist_id')
     args = argp.parse_args()
 
-    brk = []
-    if args.csv and args.breaks:
-        if not os.path.exists(args.breaks):
-            raise argparse.ArgumentTypeError(f"breakfile {str(args.breaks)} doesn't exist")
-        with open(args.breaks, 'r', encoding='utf-8') as f:
-            for i in f:
-                try:
-                    brk.append(int(i))
-                except ValueError:
-                    pass
-
-    if (
-        not check_file(args.csv, args.overwrite)
-        and not check_file(args.yaml, args.overwrite)
-        and not check_file(args.json, args.overwrite)
-    ):
-        print('must provide a csv, yaml, or json file name')
-        return
 
     scope = 'playlist-read-private'
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
@@ -221,13 +216,21 @@ def main():
 
     tracklist = create_items(sp, pl)
 
-    if args.csv:
+    if check_file_for_overwrite(args.csv, args.overwrite):
+        brk = []
+        if args.breaks:
+            with open(args.breaks, 'r', encoding='utf-8') as f:
+                for i in f:
+                    try:
+                        brk.append(int(i))
+                    except ValueError:
+                        pass
         write_csv(args, tracklist, brk)
 
-    if args.yaml:
+    if check_file_for_overwrite(args.yaml, args.overwrite):
         write_yaml(args.yaml, tracklist)
 
-    if args.json:
+    if check_file_for_overwrite(args.json, args.overwrite):
         write_json(args.json, tracklist)
 
 
