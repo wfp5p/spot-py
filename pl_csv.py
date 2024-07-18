@@ -10,17 +10,6 @@ duration => duration
 album => album
 released => released (but spot data needs a massage)
 label => label
-
-format #1 is 'performer','title','album','duration'
-format #2 is 'title','duration','performer','album','released','label','composer','notes'
-format #3 is 'title', 'duration', 'performer', 'album', 'spot_id'
-format #4 is 'title', 'duration', 'performer', 'album', 'released', 'label', 'composer', 'notes', 'spot_id'
-
-format 1 is old style to feed into noburn pass 1
-format 2 mimics what noburn pass 1 would emit
-format 3 is format 1 but has spotify track id number
-format 4 is format 2 plus spot_id
-
 """
 
 import argparse
@@ -123,22 +112,8 @@ def write_json(filename, tracklist):
 def write_csv(args, tracklist, brk):
     fp = args.csv
     noheader = args.noheader
-    fnum = args.format_number
 
-    formats = [
-        ['performer', 'title', 'album', 'duration'],
-        [
-            'title',
-            'duration',
-            'performer',
-            'album',
-            'released',
-            'label',
-            'composer',
-            'notes',
-        ],
-        ['title', 'duration', 'performer', 'album', 'spot_id'],
-        [
+    outputFormat = [
             'title',
             'duration',
             'performer',
@@ -149,7 +124,6 @@ def write_csv(args, tracklist, brk):
             'notes',
             'spot_id',
             'added_at',
-        ],
     ]
 
     brk_row = {'duration': '!'}
@@ -158,7 +132,7 @@ def write_csv(args, tracklist, brk):
         writer = csv.DictWriter(outfile,
                                 dialect='unix',
                                 extrasaction='ignore',
-                                fieldnames=formats[int(fnum) - 1])
+                                fieldnames=outputFormat)
 
         if not noheader:
             writer.writeheader()
@@ -178,12 +152,6 @@ def main():
     argp_yaml = argp.add_argument_group('yaml', 'write to a yaml file')
     argp_json = argp.add_argument_group('json', 'write to a json file')
     argp_csv.add_argument('--csv', help='name of CSV file to write')
-    argp_csv.add_argument('--format',
-                          help='output format',
-                          type=int,
-                          choices=range(1, 5),
-                          default=4,
-                          dest='format_number')
     argp_csv.add_argument('--nolabel',
                           help='do not add record labels',
                           action='store_true')
