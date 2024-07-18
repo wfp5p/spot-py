@@ -30,13 +30,10 @@ import os
 import warnings
 import yaml
 import spotipy
-import logging
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
 
 warnings.simplefilter('always', DeprecationWarning)
-
-logger = logging.getLogger('pl_csv')
 
 
 def check_file(fn, overwrite):
