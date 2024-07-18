@@ -29,6 +29,7 @@ import json
 import yaml
 import spotipy
 
+from functools import partial
 from pathlib import Path
 from pylibwfp import file_arg_exist, check_file_for_overwrite
 from spotipy.oauth2 import SpotifyOAuth
@@ -61,12 +62,11 @@ def readBreaks(breakfile):
 
     p = Path(breakfile)
     with p.open('r', encoding='utf-8') as f:
-        with open(args.breaks, 'r', encoding='utf-8') as f:
-            for i in f:
-                try:
-                    brks.append(int(i))
-                except ValueError:
-                    pass
+        for i in f:
+            try:
+                brks.append(int(i))
+            except ValueError:
+                pass
 
     return brks
 
@@ -109,18 +109,18 @@ def create_items(sp, playlist):
     return tracklist
 
 
-def write_yaml(fp, tl):
-    with open(fp, 'w', encoding='utf-8') as outfile:
-        yaml.dump(tl, outfile, explicit_start=True)
+def write_yaml(filename, tracklist):
+    with open(filename, 'w', encoding='utf-8') as outfile:
+        yaml.dump(tracklist, outfile, explicit_start=True)
 
-def write_json(fp, tl):
-    with open(fp, 'w', encoding='utf-8') as outfile:
-        json.dump(tl, outfile, indent=1, ensure_ascii=False)
+def write_json(filename, tracklist):
+    with open(filename, 'w', encoding='utf-8') as outfile:
+        json.dump(tracklist, outfile, indent=1, ensure_ascii=False)
 
 # add (NEW) logic!
 
 
-def write_csv(args, tl, brk):
+def write_csv(args, tracklist, brk):
     fp = args.csv
     noheader = args.noheader
     fnum = args.format_number
@@ -163,7 +163,7 @@ def write_csv(args, tl, brk):
         if not noheader:
             writer.writeheader()
 
-        for idx, row in enumerate(tl, start=1):
+        for idx, row in enumerate(tracklist, start=1):
             if args.nolabel:
                 row['label'] = ''
             writer.writerow(row)
@@ -204,6 +204,20 @@ def main():
                       metavar='playlist_id')
     args = argp.parse_args()
 
+    # check for output files first to save the spotify call if there are none
+    outfiles = []
+    if check_file_for_overwrite(args.csv, args.overwrite):
+        outfiles.append(partial(write_csv, args=args, brk=readBreaks(args.breaks)))
+
+    if check_file_for_overwrite(args.yaml, args.overwrite):
+        outfiles.append(partial(write_yaml, filename=args.yaml))
+
+    if check_file_for_overwrite(args.json, args.overwrite):
+        outfiles.append(partial(write_json, filename=args.json))
+
+    if not outfiles:
+        print('no valid output files found')
+        return
 
     scope = 'playlist-read-private'
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
@@ -216,22 +230,8 @@ def main():
 
     tracklist = create_items(sp, pl)
 
-    if check_file_for_overwrite(args.csv, args.overwrite):
-        brk = []
-        if args.breaks:
-            with open(args.breaks, 'r', encoding='utf-8') as f:
-                for i in f:
-                    try:
-                        brk.append(int(i))
-                    except ValueError:
-                        pass
-        write_csv(args, tracklist, brk)
-
-    if check_file_for_overwrite(args.yaml, args.overwrite):
-        write_yaml(args.yaml, tracklist)
-
-    if check_file_for_overwrite(args.json, args.overwrite):
-        write_json(args.json, tracklist)
+    for output in outfiles:
+        output(tracklist=tracklist)
 
 
 if __name__ == '__main__':
