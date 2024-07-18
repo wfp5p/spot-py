@@ -27,13 +27,10 @@ import argparse
 import csv
 import json
 import os
-import warnings
 import yaml
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from spotipy.exceptions import SpotifyException
-
-warnings.simplefilter('always', DeprecationWarning)
 
 
 def check_file(fn, overwrite):
