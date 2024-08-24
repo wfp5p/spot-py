@@ -1,119 +1,165 @@
 #! /usr/bin/python
 """
-Export playlist as CSV
+Export playlist as CSV, JSON, or YAML
 
 requires SPOTIPY_CLIENT_ID and SPOTIPY_CLIENT_SECRET to be in shell env
-
-artist => performer
-title => title
-duration => duration
-album => album
-released => released (but spot data needs a massage)
-label => label
 """
 
 import argparse
 import csv
+import dataclasses
 import json
-import yaml
-import spotipy
-
-from functools import partial
 from pathlib import Path
-from pylibwfp import file_arg_exist, check_file_for_overwrite
-from spotipy.oauth2 import SpotifyOAuth
+from typing import Optional
+
+import spotipy
+import yaml
+from pylibwfp import check_file_for_overwrite, file_arg_exist
 from spotipy.exceptions import SpotifyException
+from spotipy.oauth2 import SpotifyOAuth
 
 
+@dataclasses.dataclass(slots=True, kw_only=True)
+class LabelInfo:
+    label: str
+    release_date: str
+    release_date_precision: str
+    released: str = dataclasses.field(init=False)
 
-def fm_ms(ms):
-    """convert milliseconds to MM:SS"""
-    mins, seconds = divmod(round(ms / 1000), 60)
-    return f'{int(mins)}:{int(seconds):02d}'
+    def __post_init__(self):
+        self.released = self.release_date[:4]
 
-
-def pl_iter(sp, playlist):
-    """iterator for playlist_items"""
-
-    pl = playlist['tracks']
-
-    yield from pl['items']
-    while pl['next']:
-        pl = sp.next(pl)
-        yield from pl['items']
-
-
-def readBreaks(breakfile):
-    """read file of line numbers to break at, return list of lines to break at"""
-    brks = set()
-    if not breakfile:
-        return brks
-
-    p = Path(breakfile)
-    with p.open('r', encoding='utf-8') as f:
-        for i in f:
-            try:
-                brks.add(int(i))
-            except ValueError:
-                pass
-
-    return brks
+    @classmethod
+    def fromAlbum(cls, album):
+        return cls(
+            label=album['label'],
+            release_date=album['release_date'],
+            release_date_precision=album['release_date_precision'],
+        )
 
 
+@dataclasses.dataclass(slots=True, kw_only=True)
+class TrackInfo:
+    artist: str
+    title: str
+    album: str
+    duration: str
+    fullpath: str
+    added_at: Optional[str] = None
+    spot_id: Optional[str] = None
+    label: Optional[LabelInfo] = None
 
+    def asdict(self):
+        """Expand label into toplevel dict"""
+        d = dataclasses.asdict(self)
+        if label := d.pop('label', None):
+            d = d | label
+        return d
 
-def create_items(sp, playlist):
-    """turn items into tracklist suitable for YAML dump"""
+    @classmethod
+    def add_yaml_representer(cls):
+        """add a yaml representer for this class"""
+        yaml.add_representer(cls,
+                             lambda dumper, data: dumper.represent_mapping('tag:yaml.org,2002:map', data.asdict()))
 
-    tracklist = []
-    items = pl_iter(sp, playlist)
-    for item in items:
+    @classmethod
+    def fromItem(cls, item, fullpath='spotify'):
+        def fm_ms(ms):
+            """convert milliseconds to MM:SS"""
+            mins, seconds = divmod(round(ms / 1000), 60)
+            return f'{int(mins)}:{int(seconds):02d}'
+
         track = item['track']
-
-        track_info = {
-            'artist': track['artists'][0]['name'],
-            'performer': track['artists'][0]['name'],
-            'title': track['name'],
-            'album': track['album']['name'],
-            'duration': fm_ms(track['duration_ms']),
-            'fullpath': 'spotify',
-            'spot_id': track['id'],
-            'added_at': item['added_at']
-        }
-
-        # Secondary query for album details
-        if track['album']['uri'] is not None:
-            try:
-                album = sp.album(track['album']['uri'])
-            except SpotifyException:
-                pass
-            else:
-                track_info['label'] = album['label']
-                track_info['released'] = album['release_date'][:4]
-                track_info['release_date'] = album['release_date']
-                track_info['release_date_precision'] = album['release_date_precision']
-
-        tracklist.append(track_info)
-
-    return tracklist
+        return cls(
+            artist=track['artists'][0]['name'],
+            title=track['name'],
+            album=track['album']['name'],
+            duration=fm_ms(track['duration_ms']),
+            fullpath=fullpath,
+            spot_id=track['id'],
+            added_at=item['added_at'],
+        )
 
 
-def write_yaml(filename, tracklist):
-    with open(filename, 'w', encoding='utf-8') as outfile:
-        yaml.dump(tracklist, outfile, explicit_start=True)
+class Playlist:
+    __slots__ = ['tracks', 'breaks', 'csvoptions']
 
-def write_json(filename, tracklist):
-    with open(filename, 'w', encoding='utf-8') as outfile:
-        json.dump(tracklist, outfile, indent=1, ensure_ascii=False)
+    def __init__(self, tracks=None, breaks=None, csvoptions=None):
+        self.tracks = list(tracks) if tracks else list()
+        self.breaks = set(breaks) if breaks else set()
+        self.csvoptions = {'noheader': False, 'nolabel': False}
+        if csvoptions:
+            self.csvoptions = self.csvoptions | csvoptions
 
-# add (NEW) logic!
+    def readPlaylist(self, sp, playlistID):
+        """read playlist tracks using playlist ID"""
 
+        items = self.pl_iter(sp, sp.playlist(playlistID))
 
-def write_csv(args, tracklist, brk):
-    fp = args.csv
-    noheader = args.noheader
+        for item in items:
+            trackinfo = TrackInfo.fromItem(item)
 
-    outputFormat = [
+            # Secondary query for album details
+            if uri := item['track']['album']['uri']:
+                try:
+                    album = sp.album(uri)
+                except SpotifyException:
+                    pass
+                else:
+                    trackinfo.label = LabelInfo.fromAlbum(album)
+
+            self.tracks.append(trackinfo)
+
+        return
+
+    @staticmethod
+    def pl_iter(sp, playlist):
+        """iterator for playlist_items"""
+
+        pl = playlist['tracks']
+
+        yield from pl['items']
+        while pl['next']:
+            pl = sp.next(pl)
+            yield from pl['items']
+
+    def readBreaks(self, breakfile):
+        """read file of line numbers to break at, return list of lines to break at"""
+        if not breakfile:
+            return
+
+        p = Path(breakfile)
+        with p.open('r', encoding='utf-8') as f:
+            for i in f:
+                try:
+                    self.breaks.add(int(i))
+                except ValueError:
+                    pass
+
+        return
+
+    def writeOutput(self, *, fileformat, filename):
+        match fileformat:
+            case 'yaml':
+                self.write_yaml(filename)
+            case 'json':
+                self.write_json(filename)
+            case 'csv':
+                self.write_csv(filename)
+
+        return
+
+    def write_yaml(self, filename):
+        TrackInfo.add_yaml_representer()
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            yaml.dump(self.tracks, outfile, explicit_start=True)
+
+    def write_json(self, filename):
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            json.dump(self.tracks, outfile, default=lambda o: o.asdict(), indent=1, ensure_ascii=False)
+
+    def write_csv(self, filename):
+        outputFormat = [
             'title',
             'duration',
             'performer',
@@ -124,25 +170,29 @@ def write_csv(args, tracklist, brk):
             'notes',
             'spot_id',
             'added_at',
-    ]
+        ]
 
-    brk_row = {'duration': '!'}
+        brk_row = {'duration': '!'}
 
-    with open(fp, 'w', encoding='utf-8') as outfile:
-        writer = csv.DictWriter(outfile,
-                                dialect='unix',
-                                extrasaction='ignore',
-                                fieldnames=outputFormat)
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            writer = csv.DictWriter(outfile,
+                                    dialect='unix',
+                                    extrasaction='ignore',
+                                    fieldnames=outputFormat)
 
-        if not noheader:
-            writer.writeheader()
+            if not self.csvoptions['noheader']:
+                writer.writeheader()
 
-        for idx, row in enumerate(tracklist, start=1):
-            if args.nolabel:
-                row['label'] = ''
-            writer.writerow(row)
-            if idx in brk:
-                writer.writerow(brk_row)
+            for idx, track in enumerate(self.tracks, start=1):
+                row = track.asdict()
+                row['performer'] = row['artist']
+                if self.csvoptions['nolabel']:
+                    row['label'] = ''
+
+                writer.writerow(row)
+
+                if idx in self.breaks:
+                    writer.writerow(brk_row)
 
 
 def main():
@@ -173,33 +223,31 @@ def main():
     args = argp.parse_args()
 
     # check for output files first to save the spotify call if there are none
-    outfiles = []
-    if check_file_for_overwrite(args.csv, args.overwrite):
-        outfiles.append(partial(write_csv, args=args, brk=readBreaks(args.breaks)))
-
-    if check_file_for_overwrite(args.yaml, args.overwrite):
-        outfiles.append(partial(write_yaml, filename=args.yaml))
-
-    if check_file_for_overwrite(args.json, args.overwrite):
-        outfiles.append(partial(write_json, filename=args.json))
+    outfiles = list()
+    for outType in ['yaml', 'json', 'csv']:
+        if outFname := vars(args)[outType]:
+            if check_file_for_overwrite(outFname, args.overwrite):
+                outfiles.append({'fileformat': outType, 'filename': outFname})
 
     if not outfiles:
         print('no valid output files found')
         return
 
+    playlist = Playlist(csvoptions={'noheader': args.noheader, 'nolabel': args.nolabel})
+
+    playlist.readBreaks(args.breaks)
+
     scope = 'playlist-read-private'
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
     try:
-        pl = sp.playlist(args.pl_id)
+        playlist.readPlaylist(sp, args.pl_id)
     except SpotifyException:
         print('playlist not found')
         return
 
-    tracklist = create_items(sp, pl)
-
     for output in outfiles:
-        output(tracklist=tracklist)
+        playlist.writeOutput(**output)
 
 
 if __name__ == '__main__':
