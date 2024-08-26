@@ -45,7 +45,7 @@ def pl_iter(sp, playlist):
 
 def readBreaks(breakfile):
     """read file of line numbers to break at, return list of lines to break at"""
-    brks = []
+    brks = set()
     if not breakfile:
         return brks
 
@@ -53,7 +53,7 @@ def readBreaks(breakfile):
     with p.open('r', encoding='utf-8') as f:
         for i in f:
             try:
-                brks.append(int(i))
+                brks.add(int(i))
             except ValueError:
                 pass
 
