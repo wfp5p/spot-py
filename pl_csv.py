@@ -9,12 +9,11 @@ import argparse
 import csv
 import dataclasses
 import json
-from pathlib import Path
 from typing import Optional
 
 import spotipy
 import yaml
-from pylibwfp import check_file_for_overwrite, file_arg_exist
+from pylibwfp import check_file_for_overwrite
 from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -82,11 +81,10 @@ class TrackInfo:
 
 
 class Playlist:
-    __slots__ = ['tracks', 'breaks', 'csvoptions']
+    __slots__ = ['tracks', 'csvoptions']
 
-    def __init__(self, tracks=None, breaks=None, csvoptions=None):
+    def __init__(self, tracks=None, csvoptions=None):
         self.tracks = list(tracks) if tracks else list()
-        self.breaks = set(breaks) if breaks else set()
         self.csvoptions = {'noheader': False, 'nolabel': False}
         if csvoptions:
             self.csvoptions = self.csvoptions | csvoptions
@@ -123,21 +121,6 @@ class Playlist:
             pl = sp.next(pl)
             yield from pl['items']
 
-    def readBreaks(self, breakfile):
-        """read file of line numbers to break at, return list of lines to break at"""
-        if not breakfile:
-            return
-
-        p = Path(breakfile)
-        with p.open('r', encoding='utf-8') as f:
-            for i in f:
-                try:
-                    self.breaks.add(int(i))
-                except ValueError:
-                    pass
-
-        return
-
     def writeOutput(self, *, fileformat, filename):
         match fileformat:
             case 'yaml':
@@ -172,8 +155,6 @@ class Playlist:
             'added_at',
         ]
 
-        brk_row = {'duration': '!'}
-
         with open(filename, 'w', encoding='utf-8') as outfile:
             writer = csv.DictWriter(outfile,
                                     dialect='unix',
@@ -183,16 +164,13 @@ class Playlist:
             if not self.csvoptions['noheader']:
                 writer.writeheader()
 
-            for idx, track in enumerate(self.tracks, start=1):
+            for track in self.tracks:
                 row = track.asdict()
                 row['performer'] = row['artist']
                 if self.csvoptions['nolabel']:
                     row['label'] = ''
-
                 writer.writerow(row)
 
-                if idx in self.breaks:
-                    writer.writerow(brk_row)
 
 
 def main():
@@ -208,9 +186,6 @@ def main():
     argp_csv.add_argument('--noheader',
                           help='do not write header line',
                           action='store_true')
-    argp_csv.add_argument('--breaks',
-                          help='file listing line numbers to break after',
-                          type=file_arg_exist())
     argp_yaml.add_argument('--yaml', help='name of YAML file to write')
     argp_json.add_argument('--json', help='name of JSON file to write')
     argp.add_argument('-o',
@@ -234,8 +209,6 @@ def main():
         return
 
     playlist = Playlist(csvoptions={'noheader': args.noheader, 'nolabel': args.nolabel})
-
-    playlist.readBreaks(args.breaks)
 
     scope = 'playlist-read-private'
     sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
