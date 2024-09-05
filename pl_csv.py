@@ -98,9 +98,9 @@ class Playlist:
             trackinfo = TrackInfo.fromItem(item)
 
             # Secondary query for album details
-            if uri := item['track']['album']['uri']:
+            if album_id := item['track']['album']['id']:
                 try:
-                    album = sp.album(uri)
+                    album = sp.album(album_id)
                 except SpotifyException:
                     pass
                 else:
