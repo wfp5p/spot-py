@@ -36,6 +36,7 @@ def trackFromItem(item, fullpath='spotify'):
         'album_id': track['album']['id'],
         'release_date': track['album']['release_date'],
         'release_date_precision': track['album']['release_date_precision'],
+        'album_track_number': track['track_number'],
     }
 
 
@@ -49,8 +50,9 @@ class Playlist:
         """read playlist tracks using playlist ID"""
 
         # add a track_number
-        for item in self.sp_iter(self._spot_pl['tracks']):
+        for itemNumber, item in enumerate(self.sp_iter(self._spot_pl['tracks']), start=1):
             trackinfo = trackFromItem(item)
+            trackinfo['track_number'] = itemNumber
 
             if nolabel:
                 trackinfo['label'] = ''
