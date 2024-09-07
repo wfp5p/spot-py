@@ -102,6 +102,8 @@ def write_csv(data, fp, noheader=False, fieldnames=None):
         writer.writeheader()
 
     for row in data:
+        if r := row['release_date']:
+            row['released'] = r[:4]
         row['performer'] = row['artist']
         writer.writerow(row)
 
