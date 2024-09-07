@@ -57,12 +57,13 @@ class Playlist:
             if nolabel:
                 trackinfo['label'] = None
             else:
-                try:
-                    album = self._sp.album(trackinfo['album_id'])
-                except SpotifyException:
-                    pass
-                else:
-                    trackinfo['label'] = album['label']
+                if album_id := trackinfo['album_id']:
+                    try:
+                        album = self._sp.album(album_id)
+                    except SpotifyException:
+                        pass
+                    else:
+                        trackinfo['label'] = album['label']
 
             self.tracks.append(trackinfo)
 
