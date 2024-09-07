@@ -55,7 +55,7 @@ class Playlist:
             trackinfo['track_number'] = itemNumber
 
             if nolabel:
-                trackinfo['label'] = ''
+                trackinfo['label'] = None
             else:
                 try:
                     album = self._sp.album(trackinfo['album_id'])
