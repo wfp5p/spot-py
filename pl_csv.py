@@ -88,6 +88,7 @@ def write_csv(data, fp, noheader=False, fieldnames=None):
         'composer',
         'notes',
         'spot_id',
+        'album_id',
         'added_at',
     ]
 
