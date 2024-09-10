@@ -89,7 +89,6 @@ def write_csv(data, fp, noheader=False, fieldnames=None):
         'notes',
         'spot_id',
         'album_id',
-        'added_at',
     ]
 
     if fieldnames is not None:
