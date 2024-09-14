@@ -67,7 +67,6 @@ class Playlist:
 
             self.tracks.append(trackinfo)
 
-        return
 
     def sp_iter(self, iterable):
         yield from iterable['items']
