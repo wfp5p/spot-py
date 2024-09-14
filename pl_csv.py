@@ -46,7 +46,7 @@ class Playlist:
         self._sp = sp
         self._spot_pl = self._sp.playlist(playlistID)
 
-    def readTracks(self, nolabel=False):
+    def readTracks(self, *, nolabel=False):
         """read playlist tracks using playlist ID"""
 
         # add a track_number
@@ -76,7 +76,7 @@ class Playlist:
             yield from iterable['items']
 
 
-def write_csv(data, fp, noheader=False, fieldnames=None):
+def write_csv(data, fp, *, noheader=False, fieldnames=None):
     """fp is assumed to be an open file pointer"""
     defaultFields = [
         'title',
