@@ -42,7 +42,7 @@ def trackFromItem(item, fullpath='spotify'):
 
 class Playlist:
     def __init__(self, sp, playlistID):
-        self.tracks = list()
+        self.tracks = []
         self._sp = sp
         self._spot_pl = self._sp.playlist(playlistID)
 
@@ -138,7 +138,7 @@ def main():
         ('json', partial(json.dump, indent=1, ensure_ascii=False)),
         ('csv', partial(write_csv, noheader=args.noheader)),
     )
-    outfiles = list()
+    outfiles = []
     for outType, writer in outTypes:
         if outFname := vars(args)[outType]:
             if check_file_for_overwrite(outFname, args.overwrite):
