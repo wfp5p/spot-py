@@ -1,3 +1,4 @@
 spot.ids
 .cache
 .pylintrc
+__pycache__
